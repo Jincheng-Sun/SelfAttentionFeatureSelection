@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 class SAFSModel(Model):
     def __init__(
-            self, save_path, log_path, d_features, d_out_list, d_classifier, d_output, threshold=None, optimizer=None,
+            self, save_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output, threshold=None, optimizer=None,
             **kwargs):
         super().__init__(save_path, log_path)
         self.d_output = d_output
@@ -16,11 +16,11 @@ class SAFSModel(Model):
 
         # ----------------------------- Model ------------------------------ #
 
-        self.model = SelfAttentionFeatureSelection(d_features, d_out_list)
+        self.model = SelfAttentionFeatureSelection(d_features, d_out_list, kernel, stride)
 
         # --------------------------- Classifier --------------------------- #
 
-        self.classifier = LinearClassifier(d_features, d_classifier, d_output)
+        self.classifier = LinearClassifier(d_out_list[-1], d_classifier, d_output)
 
         # ------------------------------ CUDA ------------------------------ #
         self.data_parallel()

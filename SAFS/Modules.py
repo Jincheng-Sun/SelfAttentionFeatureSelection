@@ -1,17 +1,15 @@
 import torch.nn as nn
 from SAFS.Layers import SelfAttentionLayer
-from SAFS.ShuffleAlgorithms import cross_shuffle
 
 class SelfAttentionFeatureSelection(nn.Module):
-    def __init__(self, d_features, d_out_list):
+    def __init__(self, d_features, d_out_list, kernel, stride):
         super().__init__()
-        self.index = cross_shuffle(d_features, 8)
 
         d_out_list.insert(0, d_features)
 
         self.layers = nn.ModuleList([
-            SelfAttentionLayer(d_in, d_out, kernel=3, stride=3, d_k=32, d_v=32, n_replica=8,
-                               shuffled_index=self.index) for d_in, d_out in zip(d_out_list, d_out_list[1:])])
+            SelfAttentionLayer(d_in, d_out, kernel=kernel, stride=stride, d_k=32, d_v=32, n_replica=8,
+                               ) for d_in, d_out in zip(d_out_list, d_out_list[1:])])
 
     def forward(self, features):
         self_attn_list = []

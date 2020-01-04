@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def cross_shuffle(d_features, depth):
+def cross_shuffle(d_features, n_replica):
     '''
         Arguments:
             d_features {Int} -- the dimension of the features
@@ -17,7 +17,7 @@ def cross_shuffle(d_features, depth):
         dim_odd = 1
     else:
         dim_odd = 0
-    return odd_even_shuffle(index, depth, dim_odd)
+    return odd_even_shuffle(index, n_replica, dim_odd)
 
 
 def odd_even_shuffle(index, depth, dim_odd=1):

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from SAFS.ShuffleAlgorithms import cross_shuffle
+
 
 class ScaledDotProduction(nn.Module):
     '''Scaled Dot Production'''
@@ -54,22 +56,22 @@ class Bottleneck(nn.Module):
 
 
 class SelfAttentionLayer(nn.Module):
-    def __init__(self, d_features, d_out, kernel, stride, d_k, d_v, n_replica, shuffled_index, dropout=0.1):
+    def __init__(self, d_features, d_out, kernel, stride, d_k, d_v, n_replica, dropout=0.1):
         super().__init__()
         self.d_features = d_features
         self.d_out = d_out
         self.stride = np.ceil(np.divide(d_features, d_out)).astype(int)
         self.n_replica = n_replica
-        self.shuffled_index = shuffled_index
+        self.shuffled_index = cross_shuffle(d_features, n_replica)
 
-        self.query = nn.Conv1d(1, d_k, self.stride, self.stride, bias=False)
-        self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False)
-        self.value = nn.Conv1d(1, d_v, kernel, stride, bias=False)
+        self.query = nn.Conv1d(1, d_k, kernel, self.stride, bias=False, padding=1)
+        self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False, padding=1)
+        self.value = nn.Conv1d(1, d_v, kernel, stride, bias=False, padding=1)
         self.conv = nn.Conv1d(d_v, 1, 1, 1, bias=False)
 
-        self.query.initialize_param(nn.init.xavier_normal_)
-        self.key.initialize_param(nn.init.xavier_normal_)
-        self.value.initialize_param(nn.init.xavier_normal_)
+        nn.init.xavier_normal(self.query.weight)
+        nn.init.xavier_normal(self.key.weight)
+        nn.init.xavier_normal(self.value.weight)
         nn.init.xavier_normal(self.conv.weight)
 
 
@@ -102,12 +104,12 @@ class SelfAttentionLayer(nn.Module):
         #
         # features = F.pad(features, (0, d_features_ceil - d_features), value=0)  # shape: [batch, d_features_ceil]
 
-        shuffled_features = features[:, self.index]  # shape: [batch, n_replica * d_features]
+        shuffled_features = features[:, shuffled_index]  # shape: [batch, n_replica * d_features]
 
-        query = self.query(query)  # shape: [batch, d_k, d_out]
+        query = self.query(query.unsqueeze(1))  # shape: [batch, d_k, d_out]
         key = self.key(
-            shuffled_features)  # shape: [batch, d_k, n_candidate], n_candidate = (n_replica * d_features) / stride
-        value = self.value(shuffled_features)  # shape: [batch, d_v, n_candidate]
+            shuffled_features.unsqueeze(1))  # shape: [batch, d_k, n_candidate], n_candidate = (n_replica * d_features) / stride
+        value = self.value(shuffled_features.unsqueeze(1))  # shape: [batch, d_v, n_candidate]
 
         output, attn = self.attention(query, key, value)  # shape: [batch, d_out, d_v], [batch, d_out, n_candidate]
         output = output.transpose(2, 1).contiguous()  # shape: [batch, d_v, d_out]
