@@ -46,6 +46,7 @@ class FraudDataloader():
         if shuffle:
             np.random.seed(42)
             np.random.shuffle(train_indices)
+            np.random.shuffle(test_indices)
 
         test_indices, val_indices = test_indices[split:], test_indices[:split]
 
