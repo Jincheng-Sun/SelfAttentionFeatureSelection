@@ -53,7 +53,7 @@ class FraudDataloader():
         valid_sampler = SubsetRandomSampler(val_indices)
 
         self.train_loader = DataLoader(train_set, batch_size, num_workers=4)
-        self.val_loader = DataLoader(train_set, batch_size, sampler=valid_sampler, num_workers=4)
+        self.val_loader = DataLoader(test_set, batch_size, sampler=valid_sampler, num_workers=4)
         self.test_loader = DataLoader(test_set, batch_size, sampler=test_sampler, num_workers=4)
 
 
