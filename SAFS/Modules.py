@@ -11,6 +11,8 @@ class SelfAttentionFeatureSelection(nn.Module):
             SelfAttentionLayer(d_in, d_out, kernel=kernel, stride=stride, d_k=32, d_v=32, n_replica=8,
                                ) for d_in, d_out in zip(d_out_list, d_out_list[1:])])
 
+        self.layer_norm = nn.LayerNorm(d_out_list[-1], eps=1e-6)
+
     def forward(self, features):
         self_attn_list = []
 
@@ -18,6 +20,8 @@ class SelfAttentionFeatureSelection(nn.Module):
             features, self_attn = layer(
                 features)
             self_attn_list += [self_attn]
+
+        features = self.layer_norm(features)
 
         return features, self_attn_list
 
