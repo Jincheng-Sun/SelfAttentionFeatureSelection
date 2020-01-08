@@ -64,9 +64,9 @@ class SelfAttentionLayer(nn.Module):
         self.n_replica = n_replica
         self.shuffled_index = cross_shuffle(d_features, n_replica)
 
-        self.query = nn.Conv1d(1, d_k, kernel, self.stride, bias=False, padding=1)
-        self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False, padding=1)
-        self.value = nn.Conv1d(1, d_v, kernel, stride, bias=False, padding=1)
+        self.query = nn.Conv1d(1, d_k, kernel, self.stride, bias=False)
+        self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False)
+        self.value = nn.Conv1d(1, d_v, kernel, stride, bias=False)
         self.conv = nn.Conv1d(d_v, 1, 1, 1, bias=False)
 
         nn.init.xavier_normal(self.query.weight)
@@ -74,6 +74,7 @@ class SelfAttentionLayer(nn.Module):
         nn.init.xavier_normal(self.value.weight)
         nn.init.xavier_normal(self.conv.weight)
 
+        self.padding = nn.ConstantPad1d((0, kernel - 1), 0)
 
         self.attention = ScaledDotProduction(temperature=1)
 
@@ -105,6 +106,8 @@ class SelfAttentionLayer(nn.Module):
         # features = F.pad(features, (0, d_features_ceil - d_features), value=0)  # shape: [batch, d_features_ceil]
 
         shuffled_features = features[:, shuffled_index]  # shape: [batch, n_replica * d_features]
+
+        query = self.padding(query)
 
         query = self.query(query.unsqueeze(1))  # shape: [batch, d_k, d_out]
         key = self.key(
