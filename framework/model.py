@@ -3,10 +3,12 @@ from utils import logger
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+import os
 
 class Model():
-    def __init__(self, save_path, log_path):
-        self.save_path = save_path
+    def __init__(self, name, model_path, log_path):
+        self.name = name
+        self.model_path = model_path
         self.log_path = log_path
         self.model = None
         self.classifier = None
@@ -15,6 +17,12 @@ class Model():
         self.train_logger = None
         self.eval_logger = None
         self.summary_writer = None
+
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+
+        if not os.path.exists(log_path):
+            os.makedirs(log_path)
 
     @abstractmethod
     def loss(self, **kwargs):
@@ -52,8 +60,8 @@ class Model():
         self.optimizer = Optimizer(self.parameters, lr=lr, **kwargs)
 
     def set_logger(self, mode='a'):
-        self.train_logger = logger('train',self.log_path + '-train', mode=mode)
-        self.eval_logger = logger('eval', self.log_path + '-eval', mode=mode)
+        self.train_logger = logger('train',self.log_path + self.name + '-train', mode=mode)
+        self.eval_logger = logger('eval', self.log_path + self.name + '-eval', mode=mode)
 
     def set_summary_writer(self):
         self.summary_writer = SummaryWriter(self.log_path + 'tensorboard')

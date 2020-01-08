@@ -8,9 +8,9 @@ from tqdm import tqdm
 
 class SAFSModel(Model):
     def __init__(
-            self, save_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output, threshold=None, optimizer=None,
+            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output, threshold=None, optimizer=None,
             **kwargs):
-        super().__init__(save_path, log_path)
+        super().__init__(name, model_path, log_path)
         self.d_output = d_output
         self.threshold = threshold
 
@@ -190,7 +190,7 @@ class SAFSModel(Model):
 
             if state_dict['save']:
                 checkpoint = self.checkpoint(step)
-                self.save_model(checkpoint, self.save_path + '-step-%d_loss-%.5f' % (step, loss_avg))
+                self.save_model(checkpoint, self.model_path + self.name + '-step-%d_loss-%.5f' % (step, loss_avg))
 
             return state_dict['break']
 
@@ -211,7 +211,7 @@ class SAFSModel(Model):
 
         checkpoint = self.checkpoint(state_dict['step'])
 
-        self.save_model(checkpoint, self.save_path + '-step-%d' % state_dict['step'])
+        self.save_model(checkpoint, self.model_path + self.name + '-step-%d' % state_dict['step'])
 
         self.train_logger.info(
             '[INFO]: Finish Training, ends with %d epoch(s) and %d batches, in total %d training steps.' % (
