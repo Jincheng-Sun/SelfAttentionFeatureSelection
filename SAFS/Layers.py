@@ -62,11 +62,11 @@ class SelfAttentionLayer(nn.Module):
         self.d_k = d_k
         self.d_v = d_v
         self.d_out = d_out
-        self.stride = np.ceil(np.divide(d_features, d_out)).astype(int)
+        self.stride_self = np.ceil(np.divide(d_features, d_out)).astype(int)
         self.n_replica = n_replica
         self.shuffled_index = cross_shuffle(d_features, n_replica)
 
-        self.query = nn.Conv1d(1, d_k, kernel, self.stride, bias=False)
+        self.query = nn.Conv1d(1, d_k, kernel, self.stride_self, bias=False)
         self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False)
         self.value = nn.Conv1d(1, d_v, kernel, stride, bias=False)
         self.conv = nn.Conv1d(d_v, 1, 1, 1, bias=False)
@@ -76,7 +76,7 @@ class SelfAttentionLayer(nn.Module):
         nn.init.xavier_normal(self.value.weight)
         nn.init.xavier_normal(self.conv.weight)
 
-        self.padding = nn.ConstantPad1d((0, self.stride*(d_out-1)+kernel-d_features), 0)
+        self.padding = nn.ConstantPad1d((0, self.stride_self * (d_out - 1) + kernel - d_features), 0)
 
         self.n_candidate = np.ceil(np.divide(d_features, stride)).astype(int)
 
