@@ -252,4 +252,4 @@ class SAFSModel(Model):
                     if batch_counter >= max_batches:
                         break
 
-        return pred_list, real_list
+        return pred_list, real_list, attn
