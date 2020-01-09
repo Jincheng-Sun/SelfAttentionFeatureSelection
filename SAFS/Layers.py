@@ -59,6 +59,8 @@ class SelfAttentionLayer(nn.Module):
     def __init__(self, d_features, d_out, kernel, stride, d_k, d_v, n_replica, dropout=0.1):
         super().__init__()
         self.d_features = d_features
+        self.d_k = d_k
+        self.d_v = d_v
         self.d_out = d_out
         self.stride = np.ceil(np.divide(d_features, d_out)).astype(int)
         self.n_replica = n_replica
@@ -74,7 +76,12 @@ class SelfAttentionLayer(nn.Module):
         nn.init.xavier_normal(self.value.weight)
         nn.init.xavier_normal(self.conv.weight)
 
-        self.padding = nn.ConstantPad1d((0, kernel - 1), 0)
+        self.padding = nn.ConstantPad1d((0, self.stride*(d_out-1)+kernel-d_features), 0)
+
+        self.n_candidate = np.ceil(np.divide(d_features, stride)).astype(int)
+
+        self.same_pad = (self.n_candidate - 1) * stride + kernel
+        self.padding2d = nn.ConstantPad2d((0, self.same_pad-d_features, 0, 0), 0)
 
         self.attention = ScaledDotProduction(temperature=1)
 
@@ -106,13 +113,18 @@ class SelfAttentionLayer(nn.Module):
         # features = F.pad(features, (0, d_features_ceil - d_features), value=0)  # shape: [batch, d_features_ceil]
 
         shuffled_features = features[:, shuffled_index]  # shape: [batch, n_replica * d_features]
+        shuffled_features = shuffled_features.view(-1, n_replica, d_features)
+        shuffled_features = self.padding2d(shuffled_features).view(-1, self.same_pad)
 
         query = self.padding(query)
 
         query = self.query(query.unsqueeze(1))  # shape: [batch, d_k, d_out]
         key = self.key(
-            shuffled_features.unsqueeze(1))  # shape: [batch, d_k, n_candidate], n_candidate = (n_replica * d_features) / stride
-        value = self.value(shuffled_features.unsqueeze(1))  # shape: [batch, d_v, n_candidate]
+            shuffled_features.unsqueeze(1)).view(-1, n_replica, self.d_k, self.n_candidate)  # shape: [batch, d_k, n_candidate], n_candidate = (n_replica * d_features) / stride
+        value = self.value(shuffled_features.unsqueeze(1)).view(-1, n_replica, self.d_v, self.n_candidate)  # shape: [batch, d_v, n_candidate]
+
+        key = key.transpose(2, 1).contiguous().view(-1, self.d_k, n_replica * self.n_candidate)
+        value = value.transpose(2, 1).contiguous().view(-1, self.d_v, n_replica * self.n_candidate)
 
         output, attn = self.attention(query, key, value)  # shape: [batch, d_out, d_v], [batch, d_out, n_candidate]
         output = output.transpose(2, 1).contiguous()  # shape: [batch, d_v, d_out]
