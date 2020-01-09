@@ -94,7 +94,7 @@ class Model():
 
 
     def resume_checkpoint(self, checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(self.model_path + checkpoint_path)
 
         if self.model != None:
             model_state_dict = checkpoint['model_state_dict']
@@ -109,7 +109,7 @@ class Model():
         torch.save(checkpoint, save_path)
 
     def load_model(self, checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(self.model_path + checkpoint_path)
 
         if self.model != None:
             model_state_dict = checkpoint['model_state_dict']
