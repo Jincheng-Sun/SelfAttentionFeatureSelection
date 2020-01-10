@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 
 def attention_between_2layers(shuffle_indexes, n_replica, kernel, stride, d_features, attn_value):
     '''
@@ -121,3 +121,20 @@ def end2end_attention(f_shuffle, attention_list, d_features, n_replica, kernel, 
         attn_latter = np.matmul(attn_latter, attn_former)
     attention_map = attn_latter
     return attention_map
+
+def visualize_MNIST_from_batch(sample_index, attn, label, f_shuffle, n_replica, kernel, stride):
+    sample = [i[sample_index] for i in attn]
+    attention_map = end2end_attention(f_shuffle, sample, 784, n_replica, kernel, stride)
+    average_along_outputs = np.average(attention_map, axis=0)
+    return average_along_outputs.reshape(28, 28), label[sample_index]
+
+def visualize_MNIST_by_class(cls, attn, label, f_shuffle, n_replica, kernel, stride):
+    indexes = torch.where(label == cls)
+    indexes = indexes[0].tolist()
+    maps = []
+    for i in indexes:
+        map, _ = visualize_MNIST_from_batch(i, attn, label, f_shuffle, n_replica, kernel, stride)
+        maps.append(map)
+    return maps, cls
+
+
