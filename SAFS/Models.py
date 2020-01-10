@@ -9,20 +9,19 @@ from tqdm import tqdm
 
 class SAFSModel(Model):
     def __init__(
-            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output,
-            f_shuffle=cross_shuffle, threshold=None, optimizer=None,
-            **kwargs):
+            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_k=32, d_v=32, n_replica=8,
+            d_classifier=128, n_classes=10, f_shuffle=cross_shuffle, threshold=None, optimizer=None):
         super().__init__(name, model_path, log_path)
-        self.d_output = d_output
+        self.n_classes = n_classes
         self.threshold = threshold
 
         # ----------------------------- Model ------------------------------ #
 
-        self.model = SelfAttentionFeatureSelection(f_shuffle, d_features, d_out_list, kernel, stride)
+        self.model = SelfAttentionFeatureSelection(f_shuffle, d_features, d_out_list, kernel, stride, d_k, d_v, n_replica)
 
         # --------------------------- Classifier --------------------------- #
 
-        self.classifier = LinearClassifier(d_out_list[-1], d_classifier, d_output)
+        self.classifier = LinearClassifier(d_out_list[-1], d_classifier, n_classes)
 
         # ------------------------------ CUDA ------------------------------ #
         self.data_parallel()
@@ -81,7 +80,7 @@ class SAFSModel(Model):
             logits = self.classifier(logits)
 
             # Judge if it's a regression problem
-            if self.d_output == 1:
+            if self.n_classes == 1:
                 pred = logits.sigmoid()
                 loss = mse_loss(pred, labels)
 
@@ -97,7 +96,7 @@ class SAFSModel(Model):
 
             # get metrics for logging
             acc = accuracy(pred, labels, threshold=self.threshold)
-            precision, recall, precision_avg, recall_avg = precision_recall(pred, labels, self.d_output,
+            precision, recall, precision_avg, recall_avg = precision_recall(pred, labels, self.n_classes,
                                                                             threshold=self.threshold)
             total_loss += loss.item()
             batch_counter += 1
@@ -158,7 +157,7 @@ class SAFSModel(Model):
                 logits = logits.view(batch_size, -1)
                 logits = self.classifier(logits)
 
-                if self.d_output == 1:
+                if self.n_classes == 1:
                     pred = logits.sigmoid()
                     loss = mse_loss(pred, labels)
 
@@ -167,7 +166,7 @@ class SAFSModel(Model):
                     loss = cross_entropy_loss(pred, labels, smoothing=False)
 
                 acc = accuracy(pred, labels, threshold=self.threshold)
-                precision, recall, _, _ = precision_recall(pred, labels, self.d_output, threshold=self.threshold)
+                precision, recall, _, _ = precision_recall(pred, labels, self.n_classes, threshold=self.threshold)
 
                 # feed the metrics in the evaluator
                 evaluator(loss.item(), acc.item(), precision[1].item(), recall[1].item())
