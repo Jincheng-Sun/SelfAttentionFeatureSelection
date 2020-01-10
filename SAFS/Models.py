@@ -3,12 +3,14 @@ from torch.optim.adamw import AdamW
 from framework.model import Model
 from SAFS.Modules import SelfAttentionFeatureSelection, LinearClassifier
 from SAFS.Losses import mse_loss, cross_entropy_loss, accuracy, precision_recall, Evaluator
+from SAFS.ShuffleAlgorithms import cross_shuffle
 from utils import TrainingControl, EarlyStopping
 from tqdm import tqdm
 
 class SAFSModel(Model):
     def __init__(
-            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output, threshold=None, optimizer=None,
+            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_classifier, d_output,
+            f_shuffle=cross_shuffle, threshold=None, optimizer=None,
             **kwargs):
         super().__init__(name, model_path, log_path)
         self.d_output = d_output
@@ -16,7 +18,7 @@ class SAFSModel(Model):
 
         # ----------------------------- Model ------------------------------ #
 
-        self.model = SelfAttentionFeatureSelection(d_features, d_out_list, kernel, stride)
+        self.model = SelfAttentionFeatureSelection(f_shuffle, d_features, d_out_list, kernel, stride)
 
         # --------------------------- Classifier --------------------------- #
 

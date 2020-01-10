@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from SAFS.ShuffleAlgorithms import cross_shuffle
 
 
 class ScaledDotProduction(nn.Module):
@@ -56,7 +55,7 @@ class Bottleneck(nn.Module):
 
 
 class SelfAttentionLayer(nn.Module):
-    def __init__(self, d_features, d_out, kernel, stride, d_k, d_v, n_replica, dropout=0.1):
+    def __init__(self, f_shuffle, d_features, d_out, kernel, stride, d_k, d_v, n_replica, dropout=0.1):
         super().__init__()
         self.d_features = d_features
         self.d_k = d_k
@@ -64,7 +63,7 @@ class SelfAttentionLayer(nn.Module):
         self.d_out = d_out
         self.stride_self = np.ceil(np.divide(d_features, d_out)).astype(int)
         self.n_replica = n_replica
-        self.shuffled_index = cross_shuffle(d_features, n_replica)
+        self.shuffled_index = f_shuffle(d_features, n_replica)
 
         self.query = nn.Conv1d(1, d_k, kernel, self.stride_self, bias=False)
         self.key = nn.Conv1d(1, d_k, kernel, stride, bias=False)
