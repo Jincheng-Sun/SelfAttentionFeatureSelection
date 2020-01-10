@@ -2,13 +2,13 @@ import torch.nn as nn
 from SAFS.Layers import SelfAttentionLayer
 
 class SelfAttentionFeatureSelection(nn.Module):
-    def __init__(self, f_shuffle, d_features, d_out_list, kernel, stride):
+    def __init__(self, f_shuffle, d_features, d_out_list, kernel, stride, d_k, d_v, n_replica):
         super().__init__()
 
         d_out_list.insert(0, d_features)
 
         self.layers = nn.ModuleList([
-            SelfAttentionLayer(f_shuffle, d_in, d_out, kernel=kernel, stride=stride, d_k=32, d_v=32, n_replica=8,
+            SelfAttentionLayer(f_shuffle, d_in, d_out, kernel=kernel, stride=stride, d_k=d_k, d_v=d_v, n_replica=n_replica,
                                ) for d_in, d_out in zip(d_out_list, d_out_list[1:])])
 
         self.layer_norm = nn.LayerNorm(d_out_list[-1], eps=1e-6)
