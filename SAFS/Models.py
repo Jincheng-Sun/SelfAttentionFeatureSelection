@@ -223,7 +223,7 @@ class SAFSModel(Model):
 
         pred_list = []
         real_list = []
-        attn_list = []
+        # attn_list = []
 
         self.model.eval()
         self.classifier.eval()
@@ -249,14 +249,14 @@ class SAFSModel(Model):
                     pred = logits.softmax(dim=-1)
                 pred_list += pred.tolist()
                 real_list += labels.tolist()
-                attn_list += attn
+                # attn_list += attn
 
                 if max_batches != None:
                     batch_counter += 1
                     if batch_counter >= max_batches:
                         break
 
-        return pred_list, real_list, attn_list
+        return pred_list, real_list
 
     def predict_batch(self, data, device, activation=None):
 
