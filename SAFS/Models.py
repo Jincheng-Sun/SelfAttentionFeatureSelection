@@ -217,10 +217,11 @@ class SAFSModel(Model):
             '[INFO]: Finish Training, ends with %d epoch(s) and %d batches, in total %d training steps.' % (
                 state_dict['epoch'] - 1, state_dict['batch'], state_dict['step']))
 
-    def get_predictions(self, data_loader, device, max_batches=None, activation=None):
+    def predict_dataset(self, data_loader, device, max_batches=None, activation=None):
 
         pred_list = []
         real_list = []
+        attn_list = []
 
         self.model.eval()
         self.classifier.eval()
@@ -246,10 +247,35 @@ class SAFSModel(Model):
                     pred = logits.softmax(dim=-1)
                 pred_list += pred.tolist()
                 real_list += labels.tolist()
+                attn_list += attn
 
                 if max_batches != None:
                     batch_counter += 1
                     if batch_counter >= max_batches:
                         break
 
-        return pred_list, real_list, attn
+        return pred_list, real_list, attn_list
+
+    def predict_batch(self, data, device, activation=None):
+
+        self.model.eval()
+        self.classifier.eval()
+
+        batch_counter = 0
+
+        with torch.no_grad():
+            features, labels = map(lambda x: x.to(device), data)
+
+            # get logits
+            logits, attn = self.model(features)
+            logits = logits.view(logits.shape[0], -1)
+            logits = self.classifier(logits)
+
+            # Whether to apply activation function
+            if activation != None:
+                pred = activation(logits)
+            else:
+                pred = logits.softmax(dim=-1)
+
+
+        return pred, labels, attn
