@@ -26,10 +26,9 @@ class SAFSModel(Model):
         # ------------------------------ CUDA ------------------------------ #
         self.data_parallel()
 
-        # ---------------------------- Optimizer --------------------------- #
+        # ---------------------------- Parameters -------------------------- #
         self.parameters = list(self.model.parameters()) + list(self.classifier.parameters())
-        if optimizer == None:
-            self.set_optimizer(AdamW, lr=0.002, betas=(0.9, 0.999), weight_decay=0.001)
+        self.optimizer = None if optimizer is None else optimizer
 
         # ------------------------ training control ------------------------ #
         self.controller = TrainingControl(max_step=100000, evaluate_every_nstep=100, print_every_nstep=10)
@@ -195,10 +194,12 @@ class SAFSModel(Model):
 
             return state_dict['break']
 
-    def train(self, max_epoch, train_dataloader, eval_dataloader, device,
+    def train(self, max_epoch, lr, train_dataloader, eval_dataloader, device,
               smoothing=False, earlystop=False, save_mode='best'):
-
         assert save_mode in ['all', 'best']
+        if self.optimizer is None:
+            self.set_optimizer(AdamW, lr=lr, betas=(0.9, 0.999), weight_decay=0.001)
+
         # train for n epoch
         for epoch_i in range(max_epoch):
             print('[ Epoch', epoch_i, ']')
