@@ -1,13 +1,17 @@
+import sys
+sys.path.append('/home/oem/Projects/SelfAttentionFeatureSelection')
 from Experiments.mnist.Dataloader import MNISTDataloader
 from SAFS.Models import SAFSModel
 import argparse
 import os
+import configparser
 
 current_path = os.getcwd()
 
 
 def main():
     args = argparse.ArgumentParser()
+    args.add_argument('-config', default=None, help='If use config file to load parameters, fill the config file path')
     args.add_argument('-data_path', default=current_path, help='Data file path')
     args.add_argument('-download', type=bool, default=False, help='Download MNIST dataset')
     args.add_argument('-shuffle', type=bool, default=False, help='Whether to shuffle the dataset')
@@ -27,16 +31,60 @@ def main():
     args.add_argument('-device', default='cuda', help='Run model on GPU if it is `cuda`, else `cpu`')
     opt = args.parse_args()
 
-    assert opt.device in ['cuda', 'cpu']
+    config = opt.config
+    data_path = opt.data_path
+    download = opt.download
+    shuffle = opt.shuffle
+    name = opt.name
+    save_path = opt.save_path
+    d_features = opt.d_features
+    l_outputs = opt.l_outputs
+    n_classes = opt.n_classes
+    kernel = opt.kernel
+    stride = opt.stride
+    d_hidden = opt.d_hidden
+    d_classifier = opt.d_classifier
+    lr = opt.lr
+    epochs = opt.epochs
+    batch_size = opt.batch_size
+    val_size = opt.val_size
+    device = opt.device
 
-    dataloader = MNISTDataloader(opt.data_path + '/', batch_size=opt.batch_size, val_size=opt.val_size,
-                                 shuffle=opt.shuffle, download=opt.download)
+    # if use config file, replace the values
+    if config is not None:
+        cfg = configparser.ConfigParser()
+        try:
+            cfg.read(config)
+        except:
+            raise
 
-    model = SAFSModel(opt.name, opt.save_path + '/models/', opt.save_path + '/logs/',
-                      d_features=opt.d_features, d_out_list=opt.l_output, kernel=opt.kernel, stride=opt.stride,
-                      d_k=opt.d_hidden, d_v=opt.d_hidden, d_classifier=opt.d_classifier, n_classes=opt.n_classes)
+        data_path = cfg.get('Dataloader', 'data_path')
+        download = eval(cfg.get('Dataloader', 'download'))
+        shuffle = eval(cfg.get('Dataloader', 'shuffle'))
+        name = cfg.get('Model', 'name')
+        save_path = cfg.get('Model', 'save_path')
+        d_features = eval(cfg.get('Model', 'd_features'))
+        l_outputs = eval(cfg.get('Model', 'l_outputs'))
+        n_classes = eval(cfg.get('Model', 'n_classes'))
+        kernel = eval(cfg.get('Model', 'kernel'))
+        stride = eval(cfg.get('Model', 'stride'))
+        d_hidden = eval(cfg.get('Model', 'd_hidden'))
+        d_classifier = eval(cfg.get('Model', 'd_classifier'))
+        lr = eval(cfg.get('Training', 'lr'))
+        epochs = eval(cfg.get('Training', 'epochs'))
+        batch_size = eval(cfg.get('Training', 'batch_size'))
+        val_size = eval(cfg.get('Training', 'val_size'))
+        device = cfg.get('Training', 'device')
 
-    model.train(opt.epochs, opt.lr, dataloader.train_dataloader(), dataloader.val_dataloader(), opt.device)
+
+    dataloader = MNISTDataloader(data_path + '/', batch_size=batch_size, val_size=val_size,
+                                 shuffle=shuffle, download=download)
+
+    model = SAFSModel(name, save_path + '/models/', save_path + '/logs/',
+                      d_features=d_features, d_out_list=l_outputs, kernel=kernel, stride=stride,
+                      d_k=d_hidden, d_v=d_hidden, d_classifier=d_classifier, n_classes=n_classes)
+
+    model.train(epochs, lr, dataloader.train_dataloader(), dataloader.val_dataloader(), device)
 
 
 if __name__ == '__main__':
