@@ -54,9 +54,6 @@ class SAFSModel(Model):
 
         if device == 'cuda':
             assert self.CUDA_AVAILABLE
-        # Set model and classifier training mode
-        self.model.train()
-        self.classifier.train()
 
         total_loss = 0
         batch_counter = 0
@@ -66,8 +63,11 @@ class SAFSModel(Model):
                 train_dataloader, mininterval=1,
                 desc='  - (Training)   ', leave=False):  # training_data should be a iterable
 
-            # get data from dataloader
+            # Set model and classifier training mode
+            self.model.train()
+            self.classifier.train()
 
+            # get data from dataloader
             features, labels = map(lambda x: x.to(device), batch)
 
             batch_size = len(features)
