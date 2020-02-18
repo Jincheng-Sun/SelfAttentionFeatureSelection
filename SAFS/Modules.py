@@ -11,6 +11,7 @@ class SelfAttentionFeatureSelection(nn.Module):
             SelfAttentionLayer(f_shuffle, d_in, d_out, kernel=kernel, stride=stride, d_k=d_k, d_v=d_v, n_replica=n_replica,
                                ) for d_in, d_out in zip(d_out_list, d_out_list[1:])])
 
+        ## TODO: Is layer_norm at the end really necessary?
         self.layer_norm = nn.LayerNorm(d_out_list[-1], eps=1e-6)
 
     def forward(self, features):
