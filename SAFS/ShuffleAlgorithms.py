@@ -1,7 +1,8 @@
 import numpy as np
+import random
 
 
-def cross_shuffle(d_features, n_replica):
+def cross_shuffle(d_features, n_heads=None, seeds=None):
     '''
         Arguments:
             d_features {Int} -- the dimension of the features
@@ -17,10 +18,10 @@ def cross_shuffle(d_features, n_replica):
         dim_odd = 1
     else:
         dim_odd = 0
-    return odd_even_shuffle(index, n_replica, dim_odd)
+    return odd_even_shuffle(index, n_heads, dim_odd)
 
 
-def odd_even_shuffle(index, depth, dim_odd=1):
+def odd_even_shuffle(index, n_heads, dim_odd=1):
     indexes = [] + index
 
     def odd_step(index):
@@ -38,15 +39,33 @@ def odd_even_shuffle(index, depth, dim_odd=1):
         else:
             return first + evens + odds
 
-    while (depth > 1):
-        if depth % 2 == 1:
+    while (n_heads > 1):
+        if n_heads % 2 == 1:
             index = odd_step(index)
         else:
             index = even_step(index)
 
         indexes += index
 
-        depth -= 1
+        n_heads -= 1
+
+    return indexes
+
+def random_shuffle(d_features, n_heads=None, seeds=None):
+    '''
+        Arguments:
+            d_features {Int} -- the dimension of the features
+            depth {Int} -- the depth of the expected output
+
+        Returns:
+            indexes {list} -- replicated and shuffled indexes, length = d_features*depth
+
+    '''
+    indexes = []
+    for seed in seeds:
+        index = np.arange(0, d_features).tolist()
+        random.Random(seed).shuffle(index)
+        indexes = indexes + index
 
     return indexes
 
