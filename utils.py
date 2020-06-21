@@ -100,3 +100,13 @@ class EarlyStopping():
             'break': False
         }
 
+def k_folds(k, n_samples):
+    indices = list(range(n_samples))
+    per_fold = int(np.floor(np.divide(n_samples, k)))
+    for i in range(k):
+        start = int(i * per_fold)
+        end = int((i + 1) * per_fold)
+        if i == k - 1:
+            yield indices[start:], i + 1
+        else:
+            yield indices[start:end], i + 1
