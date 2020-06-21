@@ -52,15 +52,7 @@ def odd_even_shuffle(index, n_heads, dim_odd=1):
     return indexes
 
 def random_shuffle(d_features, n_heads=None, seeds=None):
-    '''
-        Arguments:
-            d_features {Int} -- the dimension of the features
-            depth {Int} -- the depth of the expected output
 
-        Returns:
-            indexes {list} -- replicated and shuffled indexes, length = d_features*depth
-
-    '''
     indexes = []
     for seed in seeds:
         index = np.arange(0, d_features).tolist()

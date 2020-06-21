@@ -143,7 +143,7 @@ class SelfAttentionLayer(nn.Module):
 
 
 class SelfAttentionLayer_V2(nn.Module):
-    def __init__(self, f_shuffle, m, d, n, kernel, d_k, d_v, h, dropout=0.1):
+    def __init__(self, f_shuffle, seeds, m, d, n, kernel, d_k, d_v, h, dropout=0.1):
         super().__init__()
         self.d_features = m
         self.d_out = d
@@ -151,7 +151,7 @@ class SelfAttentionLayer_V2(nn.Module):
         self.d_k = d_k
         self.d_v = d_v
         self.n_heads = h
-        self.shuffled_index = f_shuffle(m, h)
+        self.shuffled_index = f_shuffle(m, h, seeds)
 
         k = np.ceil(np.divide(m, n)).astype(int)  # Subset size
         self.sub_size = k

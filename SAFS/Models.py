@@ -1,39 +1,46 @@
 import torch
 from torch.optim.adamw import AdamW
 from framework.model import Model
-from SAFS.Modules import SelfAttentionFeatureSelection, LinearClassifier
+from SAFS.Modules import SelfAttentionFeatureSelection, SelfAttentionFeatureSelection_V2, LinearClassifier
 from SAFS.Losses import mse_loss, cross_entropy_loss, accuracy, precision_recall, Evaluator
-from SAFS.ShuffleAlgorithms import cross_shuffle
+from SAFS.ShuffleAlgorithms import cross_shuffle, random_shuffle
 from utils import TrainingControl, EarlyStopping
 from tqdm import tqdm
 
+
 class SAFSModel(Model):
     def __init__(
-            self, name, model_path, log_path, d_features, d_out_list, kernel, stride, d_k=32, d_v=32, n_replica=8,
-            d_classifier=128, n_classes=10, f_shuffle=cross_shuffle, threshold=None, optimizer=None):
+            self, name, model_path, log_path, d_features, d_out_list, n_subset_list, kernel, stride, d_k=32, d_v=32,
+            n_heads=3,
+            d_classifier=128, n_classes=10, f_shuffle=random_shuffle, random_seeds=[1, 2, 3], threshold=None,
+            optimizer=None):
         super().__init__(name, model_path, log_path)
         self.n_classes = n_classes
         self.threshold = threshold
 
         # ----------------------------- Model ------------------------------ #
 
-        self.model = SelfAttentionFeatureSelection(f_shuffle, d_features, d_out_list, kernel, stride, d_k, d_v, n_replica)
+        self.model = SelfAttentionFeatureSelection_V2(f_shuffle=f_shuffle, d_features=d_features,
+                                                      n_subset_list=n_subset_list, d_out_list=d_out_list,
+                                                      kernel=kernel, stride=stride, d_k=d_k, d_v=d_v, h=n_heads,
+                                                      random_seeds=random_seeds)
 
         # --------------------------- Classifier --------------------------- #
 
         self.classifier = LinearClassifier(d_out_list[-1], d_classifier, n_classes)
 
         # ------------------------------ CUDA ------------------------------ #
-        self.data_parallel()
+        self.CUDA_AVAILABLE = self.check_cuda()
+        if self.CUDA_AVAILABLE:
+            self.data_parallel()
 
         # ---------------------------- Parameters -------------------------- #
         self.parameters = list(self.model.parameters()) + list(self.classifier.parameters())
         self.optimizer = None if optimizer is None else optimizer
 
         # ------------------------ training control ------------------------ #
-        self.controller = TrainingControl(max_step=100000, evaluate_every_nstep=100, print_every_nstep=10)
-        self.early_stopping = EarlyStopping(patience=100)
-
+        self.controller = TrainingControl(max_step=30000, evaluate_every_nstep=100, print_every_nstep=10)
+        self.early_stopping = EarlyStopping(patience=10)
 
         # --------------------- logging and tensorboard -------------------- #
         self.set_logger()
@@ -55,7 +62,6 @@ class SAFSModel(Model):
         if device == 'cuda':
             assert self.CUDA_AVAILABLE
 
-        total_loss = 0
         batch_counter = 0
 
         # update param per batch
@@ -95,9 +101,8 @@ class SAFSModel(Model):
 
             # get metrics for logging
             acc = accuracy(pred, labels, threshold=self.threshold)
-            precision, recall, precision_avg, recall_avg = precision_recall(pred, labels, self.n_classes,
-                                                                            threshold=self.threshold)
-            total_loss += loss.item()
+            # precision, recall, precision_avg, recall_avg = precision_recall(pred, labels, self.n_classes,
+            #                                                                 threshold=self.threshold)
             batch_counter += 1
 
             # training control
@@ -105,15 +110,13 @@ class SAFSModel(Model):
 
             if state_dict['step_to_print']:
                 self.train_logger.info(
-                    '[TRAINING]   - step: %5d, loss: %3.4f, acc: %1.4f, pre: %1.4f, rec: %1.4f' % (
-                        state_dict['step'], loss, acc, precision[1], recall[1]))
+                    '[TRAINING]   - step: %5d, loss: %3.4f, acc: %1.4f' % (
+                        state_dict['step'], loss, acc))
                 self.summary_writer.add_scalar('loss/train', loss, state_dict['step'])
                 self.summary_writer.add_scalar('acc/train', acc, state_dict['step'])
-                self.summary_writer.add_scalar('precision/train', precision[1], state_dict['step'])
-                self.summary_writer.add_scalar('recall/train', recall[1], state_dict['step'])
 
             if state_dict['step_to_evaluate']:
-                stop = self.val_epoch(eval_dataloader, device, state_dict['step'])
+                stop = self.eval_epoch(eval_dataloader, device, state_dict['step'])
                 state_dict['step_to_stop'] = stop
 
                 if earlystop & stop:
@@ -125,7 +128,7 @@ class SAFSModel(Model):
 
         return state_dict
 
-    def val_epoch(self, dataloader, device, step=0, plot=False):
+    def eval_epoch(self, dataloader, device, step=0):
         ''' Epoch operation in evaluation phase '''
         if device == 'cuda':
             assert self.CUDA_AVAILABLE
@@ -135,11 +138,11 @@ class SAFSModel(Model):
         self.classifier.eval()
 
         # use evaluator to calculate the average performance
-        evaluator = Evaluator()
+        # evaluator = Evaluator()
 
         pred_list = []
         real_list = []
-
+        total_loss = []
         with torch.no_grad():
 
             for batch in tqdm(
@@ -148,7 +151,6 @@ class SAFSModel(Model):
 
                 # get data from dataloader
                 features, labels = map(lambda x: x.to(device), batch)
-
                 batch_size = len(features)
 
                 # get logits
@@ -164,27 +166,18 @@ class SAFSModel(Model):
                     pred = logits
                     loss = cross_entropy_loss(pred, labels, smoothing=False)
 
-                acc = accuracy(pred, labels, threshold=self.threshold)
-                precision, recall, _, _ = precision_recall(pred, labels, self.n_classes, threshold=self.threshold)
+                pred_list += pred.tolist()
+                real_list += labels.tolist()
+                total_loss += loss.item()
 
-                # feed the metrics in the evaluator
-                evaluator(loss.item(), acc.item(), precision[1].item(), recall[1].item())
-
-                '''append the results to the predict / real list for drawing ROC or PR curve.'''
-                if plot:
-                    pred_list += pred.tolist()
-                    real_list += labels.tolist()
-
-            # get evaluation results from the evaluator
-            loss_avg, acc_avg, pre_avg, rec_avg = evaluator.avg_results()
+            acc = accuracy(pred_list, real_list, threshold=self.threshold)
+            loss_avg = sum(total_loss) / len(total_loss)
 
             self.eval_logger.info(
-                '[EVALUATION] - step: %5d, loss: %3.4f, acc: %1.4f, pre: %1.4f, rec: %1.4f' % (
-                    step, loss_avg, acc_avg, pre_avg, rec_avg))
+                '[EVALUATION] - step: %5d, loss: %3.4f, acc: %1.4f' % (
+                    step, loss_avg, acc))
             self.summary_writer.add_scalar('loss/eval', loss_avg, step)
-            self.summary_writer.add_scalar('acc/eval', acc_avg, step)
-            self.summary_writer.add_scalar('precision/eval', pre_avg, step)
-            self.summary_writer.add_scalar('recall/eval', rec_avg, step)
+            self.summary_writer.add_scalar('acc/eval', acc, step)
 
             state_dict = self.early_stopping(loss_avg)
 
@@ -208,9 +201,6 @@ class SAFSModel(Model):
             # train for on epoch
             state_dict = self.train_epoch(train_dataloader, eval_dataloader, device, smoothing, earlystop)
 
-            # if state_dict['step_to_stop']:
-            #     break
-
         checkpoint = self.checkpoint(state_dict['step'])
 
         self.save_model(checkpoint, self.model_path + self.name + '-step-%d' % state_dict['step'])
@@ -223,7 +213,7 @@ class SAFSModel(Model):
 
         pred_list = []
         real_list = []
-        # attn_list = []
+        attn_list = []
 
         self.model.eval()
         self.classifier.eval()
@@ -249,7 +239,7 @@ class SAFSModel(Model):
                     pred = logits.softmax(dim=-1)
                 pred_list += pred.tolist()
                 real_list += labels.tolist()
-                # attn_list += attn
+                attn_list += attn
 
                 if max_batches != None:
                     batch_counter += 1
@@ -258,26 +248,24 @@ class SAFSModel(Model):
 
         return pred_list, real_list
 
-    def predict_batch(self, data, device, activation=None):
-
-        self.model.eval()
-        self.classifier.eval()
-
-        batch_counter = 0
-
-        with torch.no_grad():
-            features, labels = map(lambda x: x.to(device), data)
-
-            # get logits
-            logits, attn = self.model(features)
-            logits = logits.view(logits.shape[0], -1)
-            logits = self.classifier(logits)
-
-            # Whether to apply activation function
-            if activation != None:
-                pred = activation(logits)
-            else:
-                pred = logits.softmax(dim=-1)
-
-
-        return pred, labels, attn
+    # def predict_batch(self, data, device, activation=None):
+    #
+    #     self.model.eval()
+    #     self.classifier.eval()
+    #
+    #     with torch.no_grad():
+    #         features, labels = map(lambda x: x.to(device), data)
+    #
+    #         # get logits
+    #         logits, attn = self.model(features)
+    #         logits = logits.view(logits.shape[0], -1)
+    #         logits = self.classifier(logits)
+    #
+    #         # Whether to apply activation function
+    #         if activation != None:
+    #             pred = activation(logits)
+    #         else:
+    #             pred = logits.softmax(dim=-1)
+    #
+    #
+    #     return pred, labels, attn

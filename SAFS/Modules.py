@@ -48,14 +48,16 @@ class LinearClassifier(nn.Module):
 
 
 class SelfAttentionFeatureSelection_V2(nn.Module):
-    def __init__(self, f_shuffle, d_features, n_subset_list, d_out_list, kernel, stride, d_k, d_v, h):
+    def __init__(self, f_shuffle, d_features, n_subset_list, d_out_list, kernel, stride, d_k, d_v, h,
+                 random_seeds):
         super().__init__()
 
-        d_out_list.insert(0, d_features)
+        d_out_list_copy = d_out_list.copy()
+        d_out_list_copy.insert(0, d_features)
 
         self.layers = nn.ModuleList([
-            SelfAttentionLayer_V2(f_shuffle, d_in, d_out, n_sub, kernel, d_k, d_v, h,
-                                  ) for n_sub, d_in, d_out in zip(n_subset_list, d_out_list, d_out_list[1:])])
+            SelfAttentionLayer_V2(f_shuffle, random_seeds, d_in, d_out, n_sub, kernel, d_k, d_v, h,
+                                  ) for n_sub, d_in, d_out in zip(n_subset_list, d_out_list_copy[:-1], d_out_list_copy[1:])])
 
         ## TODO: Is layer_norm at the end really necessary?
         self.layer_norm = nn.LayerNorm(d_out_list[-1], eps=1e-6)
@@ -68,6 +70,9 @@ class SelfAttentionFeatureSelection_V2(nn.Module):
                 features)
             self_attn_list += [self_attn]
 
-        features = self.layer_norm(features)
+        try:
+            features = self.layer_norm(features)
+        except:
+            pass
 
         return features, self_attn_list
