@@ -4,7 +4,7 @@ from SAFS.ShuffleAlgorithms import cross_shuffle
 
 import torch.nn as nn
 
-dataloader = MNISTDataloader('data/', batch_size=64, val_size=0.1)
+dataloader = MNISTDataloader('data/', batch_size=64, eval_size=0.1)
 
 # model = SAFSModel('test1', 'models/', 'logs/', d_features=784, d_out_list=[196, 196, 49, 49], kernel=4, stride=3,
 #                   d_classifier=128, d_output=10)
@@ -22,9 +22,9 @@ dataloader = MNISTDataloader('data/', batch_size=64, val_size=0.1)
 #                   d_classifier=128, n_classes=10, n_replica=8)
 
 model = SAFSModel('test6-1layer', 'models/', 'logs/', d_features=784, d_out_list=[49], kernel=4, stride=4,
-                  d_classifier=128, n_classes=10, n_replica=8)
+                  d_classifier=128, n_classes=10, n_heads=8)
 
-model.train(200, dataloader.train_dataloader(), dataloader.val_dataloader(), 'cuda')
+model.train(200, dataloader.train_dataloader(), dataloader.eval_dataloader(), 'cuda')
 
 # model.load_model('test4-rep8-step-19100_loss-0.05436')
 
