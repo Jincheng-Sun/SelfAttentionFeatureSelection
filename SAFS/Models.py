@@ -39,7 +39,7 @@ class SAFSModel(Model):
         self.optimizer = None if optimizer is None else optimizer
 
         # ------------------------ training control ------------------------ #
-        self.controller = TrainingControl(max_step=30000, evaluate_every_nstep=100, print_every_nstep=10)
+        self.controller = TrainingControl(max_step=30000, evaluate_every_nstep=1, print_every_nstep=10)
         self.early_stopping = EarlyStopping(patience=10)
 
         # --------------------- logging and tensorboard -------------------- #
@@ -168,8 +168,10 @@ class SAFSModel(Model):
 
                 pred_list += pred.tolist()
                 real_list += labels.tolist()
-                total_loss += loss.item()
+                total_loss += [loss.item()]
 
+            pred_list = torch.tensor(pred_list)
+            real_list = torch.tensor(real_list)
             acc = accuracy(pred_list, real_list, threshold=self.threshold)
             loss_avg = sum(total_loss) / len(total_loss)
 
