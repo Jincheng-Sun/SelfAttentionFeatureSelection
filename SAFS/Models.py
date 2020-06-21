@@ -39,7 +39,7 @@ class SAFSModel(Model):
         self.optimizer = None if optimizer is None else optimizer
 
         # ------------------------ training control ------------------------ #
-        self.controller = TrainingControl(max_step=30000, evaluate_every_nstep=100, print_every_nstep=10)
+        self.controller = TrainingControl(max_step=10000, evaluate_every_nstep=100, print_every_nstep=10)
         self.early_stopping = EarlyStopping(patience=10)
 
         # --------------------- logging and tensorboard -------------------- #
