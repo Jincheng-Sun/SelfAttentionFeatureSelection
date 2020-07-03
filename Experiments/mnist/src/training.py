@@ -1,5 +1,4 @@
-import sys
-from Experiments.mnist.Dataloader import MNISTDataloader
+from Experiments.mnist.src.Dataloader import MNISTDataloader
 from SAFS.Models import SAFSModel
 import argparse
 import os
@@ -45,7 +44,7 @@ def main():
     dataloader = MNISTDataloader(data_path + '/', batch_size=batch_size, eval_size=eval_size,
                                  shuffle=shuffle, download=download)
 
-    for i in range(15, 86, 10):
+    for i in range(25, 86, 10):
         d_out[-1] = i
         model = SAFSModel(name+'_out_%d'%i,
                           save_path + '/%s_out%d' % (name, i) + '/models/',

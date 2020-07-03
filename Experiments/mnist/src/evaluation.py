@@ -1,6 +1,3 @@
-from Experiments.mnist.Dataloader import MNISTDataloader
-from SAFS.Models import SAFSModel
-import argparse
 import os
 
 current_path = os.getcwd()

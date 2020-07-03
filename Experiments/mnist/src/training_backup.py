@@ -1,8 +1,6 @@
-from Experiments.mnist.Dataloader import MNISTDataloader
+from Experiments.mnist.src.Dataloader import MNISTDataloader
 from SAFS.Models import SAFSModel
 from SAFS.ShuffleAlgorithms import cross_shuffle
-
-import torch.nn as nn
 
 dataloader = MNISTDataloader('data/', batch_size=64, eval_size=0.1)
 
@@ -44,7 +42,7 @@ model.train(200, dataloader.train_dataloader(), dataloader.eval_dataloader(), 'c
 #
 # Visualization of the attention
 
-from Experiments.visualization import visualize_MNIST_from_batch, visualize_MNIST_by_class
+from Experiments.visualization import visualize_MNIST_by_class
 
 import seaborn as sn
 import matplotlib.pyplot as plt
