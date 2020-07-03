@@ -13,7 +13,7 @@ class SAFSModel(Model):
             self, name, model_path, log_path, d_features, d_out_list, n_subset_list, kernel, stride, d_k=32, d_v=32,
             n_heads=3,
             d_classifier=128, n_classes=10, f_shuffle=random_shuffle, random_seeds=[1, 2, 3], threshold=None,
-            optimizer=None):
+            optimizer=None, no_log=False):
         super().__init__(name, model_path, log_path)
         self.n_classes = n_classes
         self.threshold = threshold
@@ -45,6 +45,7 @@ class SAFSModel(Model):
         # --------------------- logging and tensorboard -------------------- #
         self.set_logger()
         self.set_summary_writer()
+        self.no_log = no_log
         # ---------------------------- END INIT ---------------------------- #
         self.count_parameters()
 
@@ -109,9 +110,10 @@ class SAFSModel(Model):
             state_dict = self.controller(batch_counter)
 
             if state_dict['step_to_print']:
-                self.train_logger.info(
-                    '[TRAINING]   - step: %5d, loss: %3.4f, acc: %1.4f' % (
-                        state_dict['step'], loss, acc))
+                if not self.no_log:
+                    self.train_logger.info(
+                        '[TRAINING]   - step: %5d, loss: %3.4f, acc: %1.4f' % (
+                            state_dict['step'], loss, acc))
                 self.summary_writer.add_scalar('loss/train', loss, state_dict['step'])
                 self.summary_writer.add_scalar('acc/train', acc, state_dict['step'])
 
