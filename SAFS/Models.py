@@ -177,9 +177,10 @@ class SAFSModel(Model):
             acc = accuracy(pred_list, real_list, threshold=self.threshold)
             loss_avg = sum(total_loss) / len(total_loss)
 
-            self.eval_logger.info(
-                '[EVALUATION] - step: %5d, loss: %3.4f, acc: %1.4f' % (
-                    step, loss_avg, acc))
+            if not self.no_log:
+                self.eval_logger.info(
+                    '[EVALUATION] - step: %5d, loss: %3.4f, acc: %1.4f' % (
+                        step, loss_avg, acc))
             self.summary_writer.add_scalar('loss/eval', loss_avg, step)
             self.summary_writer.add_scalar('acc/eval', acc, step)
 
