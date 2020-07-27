@@ -13,8 +13,11 @@ class SAFSModel(Model):
             self, name, model_path, log_path, d_features, d_out_list, n_subset_list, kernel, stride, d_k=32, d_v=32,
             n_heads=3,
             d_classifier=128, n_classes=10, f_shuffle=random_shuffle, random_seeds=[1, 2, 3], threshold=None,
-            optimizer=None, no_log=False):
-        super().__init__(name, model_path, log_path)
+            optimizer=None, no_log=False, test=False):
+        if test:
+            self.model_path = model_path
+        else:
+            super().__init__(name, model_path, log_path)
         self.n_classes = n_classes
         self.threshold = threshold
 
@@ -43,8 +46,9 @@ class SAFSModel(Model):
         self.early_stopping = EarlyStopping(patience=10)
 
         # --------------------- logging and tensorboard -------------------- #
-        self.set_logger()
-        self.set_summary_writer()
+        if not test:
+            self.set_logger()
+            self.set_summary_writer()
         self.no_log = no_log
         # ---------------------------- END INIT ---------------------------- #
         self.count_parameters()
@@ -251,7 +255,11 @@ class SAFSModel(Model):
                     if batch_counter >= max_batches:
                         break
 
-        return pred_list, real_list
+        pred_list = torch.tensor(pred_list)
+        real_list = torch.tensor(real_list)
+        acc = accuracy(pred_list, real_list, threshold=self.threshold)
+
+        return pred_list, real_list, acc, attn_list
 
     # def predict_batch(self, data, device, activation=None):
     #
