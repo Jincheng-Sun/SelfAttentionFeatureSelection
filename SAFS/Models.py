@@ -222,6 +222,7 @@ class SAFSModel(Model):
 
         pred_list = []
         real_list = []
+        total_loss = []
         attn_list = []
 
         self.model.eval()
@@ -244,10 +245,14 @@ class SAFSModel(Model):
                 # Whether to apply activation function
                 if activation != None:
                     pred = activation(logits)
+                    loss = mse_loss(pred, labels)
                 else:
                     pred = logits.softmax(dim=-1)
+                    loss = cross_entropy_loss(pred, labels, smoothing=False)
+
                 pred_list += pred.tolist()
                 real_list += labels.tolist()
+                total_loss += [loss.item()]
                 attn_list += attn
 
                 if max_batches != None:
@@ -257,9 +262,10 @@ class SAFSModel(Model):
 
         pred_list = torch.tensor(pred_list)
         real_list = torch.tensor(real_list)
+        loss_avg = sum(total_loss) / len(total_loss)
         acc = accuracy(pred_list, real_list, threshold=self.threshold)
 
-        return pred_list, real_list, acc, attn_list
+        return pred_list, real_list, acc, loss_avg, attn_list
 
     # def predict_batch(self, data, device, activation=None):
     #
