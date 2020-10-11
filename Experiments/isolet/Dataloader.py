@@ -64,17 +64,17 @@ class IsoletDataset(Dataset):
 #         return self.test_loader
 
 class IsoletDataloader():
-    def __init__(self, file_dir, test_indices, batch_size, eval_size=0.1):
+    def __init__(self, file_dir, batch_size, test_size=0.2, eval_size=0.1):
         # Load training data
         dataset = IsoletDataset(file_dir)
         n_samples = len(dataset)
         indices = list(range(n_samples))
 
-        train_indices = [i for i in indices if not i in test_indices]
-        eval_split = int(np.ceil(eval_size * len(train_indices)))
+        # train_indices = [i for i in indices if not i in test_indices]
+        test_split = int(np.floor(test_size * len(indices)))
+        train_indices, test_indices = indices[:-test_split], indices[-test_split:]
+        eval_split = int(np.floor(eval_size * len(indices)))
         train_indices, eval_indices = train_indices[:-eval_split], train_indices[-eval_split:]
-
-
 
         train_sampler = SubsetRandomSampler(train_indices)
         eval_sampler = SubsetRandomSampler(eval_indices)
