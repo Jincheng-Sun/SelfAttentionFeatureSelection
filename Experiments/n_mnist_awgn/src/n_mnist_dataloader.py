@@ -5,9 +5,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import numpy as np
 
 
-class MnistAwgnDataset(Dataset):
+class NMnistDataset(Dataset):
     def __init__(self, file_dir, train=True):
-        super(MnistAwgnDataset, self).__init__()
+        super(NMnistDataset, self).__init__()
 
         dataset = scipy.io.loadmat(file_dir)
 
@@ -38,17 +38,17 @@ class MnistAwgnDataset(Dataset):
         return self.classes
 
 
-class MnistAwgnDataloader():
+class NMnistDataloader():
     def __init__(self, file_dir, batch_size, eval_size, shuffle=True):
         assert eval_size <= 1
         # Load training data
-        train_set = MnistAwgnDataset(file_dir, train=True)
+        train_set = NMnistDataset(file_dir, train=True)
         n_train_samples = len(train_set)
         train_indices = list(range(n_train_samples))
         split = int(np.floor(eval_size * n_train_samples))
 
         # Load test data
-        test_set = MnistAwgnDataset(file_dir, train=False)
+        test_set = NMnistDataset(file_dir, train=False)
         n_test_samples = len(test_set)
         test_indices = list(range(n_test_samples))
 
