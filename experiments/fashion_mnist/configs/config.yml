@@ -1,11 +1,11 @@
 # Dataloader settings
-data_path : 'SelfAttentionFeatureSelection/Experiments/mnist/data'
+data_path : 'SelfAttentionFeatureSelection/Experiments/fashion_mnist/data'
 eval_size : 0.1
 shuffle : True
 download : True
 # Model settings
 name : 'mnist'
-save_path : 'SelfAttentionFeatureSelection/Experiments/mnist/models'
+save_path : 'SelfAttentionFeatureSelection/Experiments/fashion_mnist/models'
 n_fd : 784
 # d_out : [15]
 # n_sub : [15]
