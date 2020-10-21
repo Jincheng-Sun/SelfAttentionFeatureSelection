@@ -58,7 +58,7 @@ class NMnistDataloader():
 
         train_indices, eval_indices = train_indices[:-split], train_indices[-split:]
 
-        train_sampler = SubsetRandomSampler(test_indices)
+        train_sampler = SubsetRandomSampler(train_indices)
         eval_sampler = SubsetRandomSampler(eval_indices)
 
         self.train_loader = DataLoader(train_set, batch_size, sampler=train_sampler)
