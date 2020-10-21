@@ -1,0 +1,24 @@
+# Dataloader settings
+data_path : 'SelfAttentionFeatureSelection/Experiments/mnist/data'
+eval_size : 0.1
+shuffle : True
+download : True
+# Model settings
+name : 'mnist'
+save_path : 'SelfAttentionFeatureSelection/Experiments/mnist/models'
+n_fd : 784
+# d_out : [15]
+# n_sub : [15]
+n_cls : 10
+kernel : 3
+stride : 3
+d_hidden : 32
+d_classifier : 128
+n_heads : 3
+random_seeds : [1, 2, 3]
+# Training settings
+lr : 0.002
+epochs : 200
+batch_size : 100
+val_size : 0.1
+device : 'cuda'
