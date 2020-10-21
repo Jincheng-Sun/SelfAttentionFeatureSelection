@@ -27,8 +27,8 @@ class ExpRunner():
         self.dataloader = loader_method(config['data_path'], batch_size=config['batch_size'],
                                         eval_size=config['eval_size'], shuffle=config['shuffle'])
 
-    def train(self, no_log):
-        for i in range(15, 296, 10):
+    def train(self, no_log, start_dim, end_dim, interval):
+        for i in range(start_dim, end_dim + 1, interval):
             d_out = [i]
             n_sub = [int(i / 5)]
             name_ = self.name + '_out_dim_%d' % d_out[-1]
