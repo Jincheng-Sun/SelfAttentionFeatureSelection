@@ -4,7 +4,7 @@ eval_size : 0.1
 shuffle : True
 download : True
 # Model settings
-name : 'mnist'
+name : 'fashion_mnist'
 save_path : 'SelfAttentionFeatureSelection/Experiments/fashion_mnist/models'
 n_fd : 784
 # d_out : [15]
