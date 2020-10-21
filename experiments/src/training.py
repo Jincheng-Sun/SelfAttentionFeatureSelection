@@ -12,7 +12,7 @@ class ExpRunner():
         self.config = config
         self.name = config['name']
         self.save_path = config['save_path']
-        self.n_fs = config['n_features']
+        self.n_fd = config['n_fd']
         self.kernel = config['kernel']
         self.stride = config['stride']
         self.d_hidden = config['d_hidden']
@@ -35,7 +35,7 @@ class ExpRunner():
             model = SAFSModel(name_,
                               self.save_path + '/%s/models/' % name_,
                               self.save_path + '/%s/logs/' % name_,
-                              d_features=self.n_fs, d_out_list=d_out, n_subset_list=n_sub, kernel=self.kernel,
+                              d_features=self.n_fd, d_out_list=d_out, n_subset_list=n_sub, kernel=self.kernel,
                               stride=self.stride, d_k=self.d_hidden, d_v=self.d_hidden, d_classifier=self.d_classifier,
                               n_classes=self.n_cls, n_heads=self.n_heads, random_seeds=self.random_seeds, no_log=no_log)
 
@@ -48,7 +48,7 @@ class ExpRunner():
             d_out = [i]
             n_sub = [int(i / 5)]
             name_ = self.name + '_out_dim_%d' % d_out[-1]
-            model = SAFSModel(None, self.save_path, None, d_features=self.n_fs, d_out_list=d_out, n_subset_list=n_sub,
+            model = SAFSModel(None, self.save_path, None, d_features=self.n_fd, d_out_list=d_out, n_subset_list=n_sub,
                               kernel=self.kernel, stride=self.stride, d_k=self.d_hidden, d_v=self.d_hidden,
                               d_classifier=self.d_classifier, n_classes=self.n_cls, n_heads=self.n_heads,
                               random_seeds=self.random_seeds, test=True)
