@@ -1,11 +1,11 @@
 # Dataloader settings
-data_path : 'SelfAttentionFeatureSelection/Experiments/isolet/data'
+data_path : 'SelfAttentionFeatureSelection/experiments/isolet/data/isolet'
 eval_size : 0.1
 shuffle : True
 download : True
 # Model settings
 name : 'isolet'
-save_path : 'SelfAttentionFeatureSelection/Experiments/isolet/models'
+save_path : 'SelfAttentionFeatureSelection/experiments/isolet/models'
 n_fd : 617
 n_cls : 26
 kernel : 3

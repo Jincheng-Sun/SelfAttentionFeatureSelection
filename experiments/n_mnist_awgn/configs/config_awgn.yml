@@ -1,11 +1,11 @@
 # Dataloader settings
-data_path : 'SelfAttentionFeatureSelection/Experiments/n_mnist_awgn/data/mnist-with-awgn'
+data_path : 'SelfAttentionFeatureSelection/experiments/n_mnist_awgn/data/mnist-with-awgn'
 eval_size : 0.1
 shuffle : True
 download : True
 # Model settings
 name : 'n_mnist_awgn'
-save_path : 'SelfAttentionFeatureSelection/Experiments/n_mnist_awgn/models'
+save_path : 'SelfAttentionFeatureSelection/experiments/n_mnist_awgn/models'
 n_fd : 784
 n_cls : 10
 kernel : 3

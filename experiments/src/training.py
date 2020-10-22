@@ -3,7 +3,8 @@ from SAFS.Models import SAFSModel
 import re
 import glob
 import yaml
-
+from pathlib import Path
+import os
 
 class ExpRunner():
     def __init__(self, loader_method, config_path):
@@ -44,7 +45,7 @@ class ExpRunner():
 
     def test(self, start_dim, end_dim, interval):
         results = pd.DataFrame(columns=['dataset', 'out_dim', 'sub_dim', 'accuracy', 'loss'])
-        for i in range(start_dim, end_dim, interval):
+        for i in range(start_dim, end_dim + 1, interval):
             d_out = [i]
             n_sub = [int(i / 5)]
             name_ = self.name + '_out_dim_%d' % d_out[-1]
@@ -56,10 +57,14 @@ class ExpRunner():
             # Get minimum loss model
             models = glob.glob(model.model_path + '/%s/models/*loss-*' % (name_))
             minimum = min(map(lambda x: float(re.findall(".*loss-(.*)", x)[0]), models))
-            model_path = glob.glob(model.model_path + '/%s/models/*loss-%f*' % (name_, minimum))
-            model.load_model(model_path)
+            model_path = glob.glob(model.model_path + '/%s/models/*loss-%.5f*' % (name_, minimum))[0]
+            model.load_model(Path(model_path))
             pred, real, acc, loss, attn = model.predict_dataset(self.dataloader.test_dataloader(), 'cuda')
             # attn_map = end2end_attention(random_shuffle(d_features, n_heads, seeds=random_seeds), attn, d_features, n_heads, kernel, stride)
             result = pd.DataFrame([[name_, d_out, n_sub, acc, loss]],
                                   columns=['dataset', 'out_dim', 'sub_dim', 'accuracy', 'loss'])
             results = results.append(result, ignore_index=True)
+
+        if not os.path.exists(Path(self.save_path + '/results/')):
+            os.makedirs(Path(self.save_path + '/results/'))
+        results.to_csv(Path(self.save_path + '/results/res_%d_to_%d' % (start_dim, end_dim)))

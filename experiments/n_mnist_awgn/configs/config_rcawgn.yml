@@ -1,11 +1,11 @@
 # Dataloader settings
-data_path : 'SelfAttentionFeatureSelection/Experiments/n_mnist_rcawgn/data/mnist-with-reduced-contrast-and-awgn'
+data_path : 'SelfAttentionFeatureSelection/experiments/n_mnist_rcawgn/data/mnist-with-reduced-contrast-and-awgn'
 eval_size : 0.1
 shuffle : True
 download : True
 # Model settings
 name : 'n_mnist_rcawgn'
-save_path : 'SelfAttentionFeatureSelection/Experiments/n_mnist_rcawgn/models'
+save_path : 'SelfAttentionFeatureSelection/experiments/n_mnist_rcawgn/models'
 n_fd : 784
 n_cls : 10
 kernel : 3
